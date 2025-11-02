@@ -135,9 +135,8 @@
 <body>
     <button id="startBtn">开启心语</button>
     
-    <!-- 背景音乐（替换为稳定可用的资源） -->
+    <!-- 背景音乐（使用本地仓库的音乐文件） -->
     <audio id="backgroundMusic" loop>
-        <!-- 替换为I love you so的可靠音频链接 -->
         <source src="iloveyou.mp3" type="audio/mpeg">
         您的浏览器不支持音频播放
     </audio>
@@ -145,38 +144,29 @@
      <div class="music-control" id="musicControl">▶</div>
 
     <script>
-        // 音乐控制优化
+        // 音乐控制
         const music = document.getElementById('backgroundMusic');
         const musicControl = document.getElementById('musicControl');
         let isPlaying = false;
         
-        // 控制音乐播放/暂停（增加错误处理）
+        // 控制音乐播放/暂停
         function toggleMusic() {
             if (isPlaying) {
                 music.pause();
                 musicControl.textContent = '▶';
             } else {
-                // 尝试播放，处理可能的错误
+                // 尝试播放，处理错误
                 music.play().then(() => {
                     musicControl.textContent = '⏸';
                 }).catch(e => {
                     console.log('音乐播放失败:', e);
-                    // 失败时显示提示（可选）
-                    alert('音乐播放需要您的交互，请点击播放按钮重试');
+                    alert('音乐播放需要您的交互，请点击右下角播放按钮重试');
                 });
             }
             isPlaying = !isPlaying;
         }
         
         musicControl.addEventListener('click', toggleMusic);
-        
-        // 确保用户交互后才能播放（符合浏览器政策）
-        document.body.addEventListener('click', () => {
-            if (!isPlaying && music.paused) {
-                // 首次点击页面时尝试自动播放
-                toggleMusic();
-            }
-        }, { once: true }); // 只执行一次
         
         // 祝福语列表
         const tips = [
@@ -335,7 +325,7 @@
         // 初始化函数
         function init() {
             createDecorElements();
-            // 点击开始按钮后尝试播放音乐
+            // 按钮点击后立即尝试播放音乐（核心修改：确保在用户交互事件中触发）
             toggleMusic();
             
             let angleStep = 360 / totalWindows;
@@ -360,10 +350,12 @@
         window.onload = () => {
             const startBtn = document.getElementById('startBtn');
             startBtn.addEventListener('click', () => {
+                // 按钮淡出动画
                 startBtn.style.opacity = '0';
                 startBtn.style.transform = 'translate(-50%, -50%) scale(0.8)';
                 setTimeout(() => {
                     startBtn.remove();
+                    // 点击按钮后执行初始化，此时触发音乐播放（属于用户交互）
                     init();
                 }, 300);
             });
