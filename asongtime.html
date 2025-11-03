@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>请给我一首歌的时间</title>
     <style>
+        /* 保持原有样式不变 */
         * {
             margin: 0;
             padding: 0;
@@ -170,7 +171,8 @@
                         musicControl.textContent = '⏸';
                     }).catch(e => {
                         console.log('音乐播放失败:', e);
-                        alert('音乐播放需要您的交互，请点击右下角播放按钮重试');
+                        // 注释掉alert避免阻塞弹幕生成
+                        // alert('音乐播放需要您的交互，请点击右下角播放按钮重试');
                     });
                 }
                 isPlaying = !isPlaying;
@@ -225,8 +227,8 @@
                 };
             }
             
-            // 爱心大小比例
-            const scale = Math.min(window.innerWidth, window.innerHeight) / 42;
+            // 爱心大小比例 - 调整为更合适的大小
+            const scale = Math.min(window.innerWidth, window.innerHeight) / 35;
             
             // 计算爱心曲线上的坐标
             function getHeartCoordinates(angle) {
@@ -240,11 +242,16 @@
                 };
             }
             
-            // 创建弹幕窗口
+            // 创建弹幕窗口 - 增加可见性检查
             function createTipWindow(angle) {
                 const { x, y } = getHeartCoordinates(angle);
                 const width = Math.floor(Math.random() * 30) + 75;
                 const height = Math.floor(Math.random() * 20) + 55;
+                
+                // 确保弹幕在可视范围内
+                if (x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) {
+                    return; // 跳过视窗外的弹幕
+                }
                 
                 const div = document.createElement('div');
                 div.className = 'tip-window';
@@ -263,7 +270,7 @@
                 }, 50);
             }
             
-            // 从主弹窗内部弹出新的祝福窗口（降低生成速度）
+            // 从主弹窗内部弹出新的祝福窗口
             function popFromMissWindow(missWindow) {
                 const rect = missWindow.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
@@ -273,7 +280,7 @@
                 const popCount = 400;
                 let delay = 0;
                 
-                // 降低生成速度（将间隔从10ms增加到50ms）
+                // 调整生成速度，确保能看到效果
                 for (let i = 0; i < popCount; i++) {
                     setTimeout(() => {
                         const width = Math.floor(Math.random() * 40) + 80;
@@ -303,23 +310,20 @@
                         }, 50);
                     }, delay);
                     
-                    delay += 50; // 生成速度降低：间隔50ms（原10ms）
+                    delay += 30; // 适当加快生成速度，确保能看到弹幕
                 }
                 
                 // 所有弹幕加载完成后，等待一段时间再开始消失
                 setTimeout(() => {
-                    // 在弹幕开始消失时，提前修改中心文字
                     const textElement = missWindow.querySelector('.miss-text');
                     textElement.textContent = '我喜欢你';
-                    textElement.style.color = '#FF69B4'; // 颜色变化增强效果
+                    textElement.style.color = '#FF69B4';
                     textElement.classList.add('pulse');
                     
-                    // 开始消失动画
                     fadeOutAllWindows(() => {
-                        // 所有弹幕消失后的回调（可选）
-                        textElement.style.fontSize = '55px'; // 最终放大效果
+                        textElement.style.fontSize = '55px';
                     });
-                }, delay + 2000); // 所有弹幕加载完成后再等2秒
+                }, delay + 2000);
             }
             
             // 所有弹幕缓慢消失
@@ -327,12 +331,16 @@
                 let completed = 0;
                 const total = allWindows.length;
                 
+                if (total === 0 && callback) {
+                    callback();
+                    return;
+                }
+                
                 allWindows.forEach(win => {
-                    // 随机延迟，错落消失
-                    const delay = Math.random() * 4000; // 延长消失过程
+                    const delay = Math.random() * 4000;
                     
                     setTimeout(() => {
-                        win.style.transition = 'all 3s ease-out'; // 更慢的消失动画
+                        win.style.transition = 'all 3s ease-out';
                         win.style.opacity = '0';
                         win.style.transform = 'scale(0.5)';
                         
@@ -371,16 +379,13 @@
                 
                 document.body.appendChild(div);
                 
-                // 主弹窗渐入动画
                 setTimeout(() => {
                     div.style.opacity = '0.97';
                     div.style.transform = 'scale(1)';
                     text.style.fontSize = '45px';
                     
-                    // 主弹窗显示后开始扩散弹幕
-                    setTimeout(() => {
-                        popFromMissWindow(div);
-                    }, 1000);
+                    // 立即开始扩散弹幕，去掉额外延迟
+                    popFromMissWindow(div);
                 }, 100);
             }
             
@@ -390,13 +395,13 @@
                 const total = allWindows.length;
                 
                 allWindows.forEach(win => {
-                    win.style.transition = 'all 0.8s ease-out'; // 初始弹幕消失稍慢
+                    win.style.transition = 'all 0.8s ease-out';
                     
                     setTimeout(() => {
                         let opacity = 1;
                         const fadeInterval = setInterval(() => {
                             if (opacity > 0) {
-                                opacity -= 0.02; // 更慢的消失速度
+                                opacity -= 0.02;
                                 win.style.opacity = opacity;
                                 win.style.transform = `scale(${0.8 + opacity * 0.2})`;
                             } else {
@@ -414,10 +419,10 @@
                 });
             }
             
-            // 初始化函数（降低初始弹幕生成速度）
+            // 初始化函数
             function init() {
                 createDecorElements();
-                toggleMusic();
+                toggleMusic(); // 尝试播放音乐，但不阻塞其他操作
                 
                 let angleStep = 360 / totalWindows;
                 let currentAngle = 0;
@@ -427,14 +432,14 @@
                         const randomAngle = currentAngle + (Math.random() * 4 - 2);
                         createTipWindow(randomAngle);
                         currentAngle += angleStep;
-                        // 降低初始弹幕生成速度（原15ms→50ms）
-                        setTimeout(createNextWindow, 50);
+                        // 调整生成速度，确保能看到弹幕
+                        setTimeout(createNextWindow, 30);
                     } else {
-                        // 初始弹幕全部加载后，等待一段时间再关闭
                         setTimeout(closeInitialWindows, 2000);
                     }
                 }
                 
+                // 立即开始创建弹幕
                 createNextWindow();
             }
             
