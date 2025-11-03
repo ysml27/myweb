@@ -56,7 +56,7 @@
             opacity: 0;
             transform: scale(0.8);
             transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 300; /* 确保弹幕层级高于主弹窗 */
+            z-index: 300;
         }
 
         .tip-window.show {
@@ -75,7 +75,7 @@
             opacity: 0;
             transform: scale(0.9);
             transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 200; /* 主弹窗层级低于弹幕 */
+            z-index: 200;
             overflow: hidden;
         }
         
@@ -178,7 +178,7 @@
             
             musicControl.addEventListener('click', toggleMusic);
             
-            // 祝福语列表（增加更多内容避免重复）
+            // 祝福语列表
             const tips = [
                 "保持微笑呀", "每天都要元气满满", "好好爱自己", "别熬夜",
                 "今天过得开心嘛", "期待下一次见面", "顺顺利利", "早点休息",
@@ -187,9 +187,7 @@
                 "金榜题名","多喝水哦","保持热爱", "平安喜乐", "万事顺遂",
                 "愿你被温柔以待", "今天也要加油", "别太累啦", "记得想我",
                 "阳光正好，微风不燥", "一切都会变好的", "慢慢来，不着急",
-                "你笑起来真好看", "照顾好自己", "记得吃饭", "加油呀",
-                "别难过", "开心一点", "日子会甜的", "好运连连", "心想事成",
-                "每天进步一点点", "保持善良", "被世界温柔以待", "笑容常在"
+                "你笑起来真好看", "照顾好自己"
             ];
             
             // 背景颜色列表
@@ -201,18 +199,17 @@
             
             // 存储所有弹幕元素
             const allWindows = [];
-            const totalInitialWindows = 200; // 初始弹幕数量
-            let hasChangedText = false; // 标记是否已切换文字
+            const totalWindows = 200; // 初始弹幕数量
             
             // 创建装饰元素
             function createDecorElements() {
-                const count = 20;
+                const count = 15;
                 for (let i = 0; i < count; i++) {
                     const decor = document.createElement('div');
                     decor.className = 'decor';
-                    decor.textContent = i % 3 === 0 ? '❀' : i % 3 === 1 ? '✦' : '❦';
+                    decor.textContent = i % 2 === 0 ? '❀' : '✦';
                     decor.style.fontSize = `${Math.random() * 15 + 10}px`;
-                    decor.style.color = i % 4 === 0 ? '#FF69B4' : '#98D8C8';
+                    decor.style.color = i % 3 === 0 ? '#FF69B4' : '#98D8C8';
                     decor.style.left = `${Math.random() * 100}vw`;
                     decor.style.top = `${Math.random() * 100}vh`;
                     decor.style.animation = `float ${Math.random() * 20 + 30}s linear infinite`;
@@ -263,55 +260,29 @@
                 
                 setTimeout(() => {
                     div.classList.add('show');
-                    // 检查是否覆盖主弹窗
-                    checkOverlay(div);
                 }, 50);
             }
             
-            // 检查弹幕是否覆盖主弹窗
-            function checkOverlay(div) {
-                if (hasChangedText || !window.missWindow) return;
-                
-                const missRect = window.missWindow.getBoundingClientRect();
-                const divRect = div.getBoundingClientRect();
-                
-                // 检测两个矩形是否重叠
-                const isOverlap = !(
-                    missRect.right < divRect.left ||
-                    missRect.left > divRect.right ||
-                    missRect.bottom < divRect.top ||
-                    missRect.top > divRect.bottom
-                );
-                
-                // 当弹幕覆盖主弹窗且未切换过文字时，切换文字
-                if (isOverlap) {
-                    hasChangedText = true;
-                    const textElement = window.missWindow.querySelector('.miss-text');
-                    textElement.textContent = '我喜欢你';
-                    textElement.style.color = '#FF69B4';
-                    textElement.classList.add('pulse');
-                }
-            }
-            
-            // 生成全屏弹幕
-            function createFullScreenTips(missWindow) {
+            // 从主弹窗内部弹出新的祝福窗口（降低生成速度）
+            function popFromMissWindow(missWindow) {
                 const rect = missWindow.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
                 const centerY = rect.top + rect.height / 2;
                 
-                // 增加弹幕数量以填满屏幕
-                const popCount = 1000;
+                // 弹幕数量
+                const popCount = 400;
                 let delay = 0;
                 
-                // 生成速度适中，确保能填满屏幕
+                // 降低生成速度（将间隔从10ms增加到50ms）
                 for (let i = 0; i < popCount; i++) {
                     setTimeout(() => {
-                        const width = Math.floor(Math.random() * 40) + 70;
-                        const height = Math.floor(Math.random() * 20) + 50;
+                        const width = Math.floor(Math.random() * 40) + 80;
+                        const height = Math.floor(Math.random() * 20) + 60;
                         
-                        // 随机位置，确保覆盖全屏
-                        const x = Math.random() * window.innerWidth - width / 2;
-                        const y = Math.random() * window.innerHeight - height / 2;
+                        const angle = Math.random() * Math.PI * 2;
+                        const distance = Math.random() * 500 + 50;
+                        const x = centerX + Math.cos(angle) * distance - width / 2;
+                        const y = centerY + Math.sin(angle) * distance - height / 2;
                         
                         const div = document.createElement('div');
                         div.className = 'tip-window';
@@ -320,44 +291,35 @@
                         div.style.left = `${x}px`;
                         div.style.top = `${y}px`;
                         div.style.backgroundColor = bgColors[Math.floor(Math.random() * bgColors.length)];
-                        div.style.zIndex = 300; // 确保在主弹窗上方
                         div.textContent = tips[Math.floor(Math.random() * tips.length)];
-                        
-                        // 随机入场动画
-                        const入场方向 = Math.random();
-                        if (入场方向 < 0.25) {
-                            div.style.transform = `translateX(-100px) scale(0.5)`;
-                        } else if (入场方向 < 0.5) {
-                            div.style.transform = `translateX(100px) scale(0.5)`;
-                        } else if (入场方向 < 0.75) {
-                            div.style.transform = `translateY(-100px) scale(0.5)`;
-                        } else {
-                            div.style.transform = `translateY(100px) scale(0.5)`;
-                        }
+                        div.style.transform = `translate(${centerX - x - width/2}px, ${centerY - y - height/2}px) scale(0.5)`;
                         
                         document.body.appendChild(div);
                         allWindows.push(div);
                         
-                        // 触发显示动画
                         setTimeout(() => {
                             div.classList.add('show');
                             div.style.transform = 'scale(1)';
-                            // 检查是否覆盖主弹窗
-                            checkOverlay(div);
                         }, 50);
-                        
-                        // 弹幕自动消失（5-8秒后）
-                        setTimeout(() => {
-                            div.style.opacity = '0';
-                            div.style.transform = 'scale(0.8)';
-                            setTimeout(() => {
-                                if (div.parentNode) div.parentNode.removeChild(div);
-                            }, 600);
-                        }, 5000 + Math.random() * 3000);
                     }, delay);
                     
-                    delay += 20; // 生成间隔，确保能填满屏幕
+                    delay += 50; // 生成速度降低：间隔50ms（原10ms）
                 }
+                
+                // 所有弹幕加载完成后，等待一段时间再开始消失
+                setTimeout(() => {
+                    // 在弹幕开始消失时，提前修改中心文字
+                    const textElement = missWindow.querySelector('.miss-text');
+                    textElement.textContent = '我喜欢你';
+                    textElement.style.color = '#FF69B4'; // 颜色变化增强效果
+                    textElement.classList.add('pulse');
+                    
+                    // 开始消失动画
+                    fadeOutAllWindows(() => {
+                        // 所有弹幕消失后的回调（可选）
+                        textElement.style.fontSize = '55px'; // 最终放大效果
+                    });
+                }, delay + 2000); // 所有弹幕加载完成后再等2秒
             }
             
             // 所有弹幕缓慢消失
@@ -365,16 +327,12 @@
                 let completed = 0;
                 const total = allWindows.length;
                 
-                if (total === 0 && callback) {
-                    callback();
-                    return;
-                }
-                
                 allWindows.forEach(win => {
-                    const delay = Math.random() * 3000;
+                    // 随机延迟，错落消失
+                    const delay = Math.random() * 4000; // 延长消失过程
                     
                     setTimeout(() => {
-                        win.style.transition = 'all 2s ease-out';
+                        win.style.transition = 'all 3s ease-out'; // 更慢的消失动画
                         win.style.opacity = '0';
                         win.style.transform = 'scale(0.5)';
                         
@@ -385,7 +343,7 @@
                             if (completed === total && callback) {
                                 callback();
                             }
-                        }, 2000);
+                        }, 3000);
                     }, delay);
                 });
             }
@@ -398,7 +356,6 @@
                 const width = 500;
                 const height = 250;
                 
-                // 创建主弹窗
                 window.missWindow = document.createElement('div');
                 const div = window.missWindow;
                 div.className = 'miss-window';
@@ -420,8 +377,10 @@
                     div.style.transform = 'scale(1)';
                     text.style.fontSize = '45px';
                     
-                    // 主弹窗显示后立即开始生成全屏弹幕
-                    createFullScreenTips(div);
+                    // 主弹窗显示后开始扩散弹幕
+                    setTimeout(() => {
+                        popFromMissWindow(div);
+                    }, 1000);
                 }, 100);
             }
             
@@ -431,13 +390,13 @@
                 const total = allWindows.length;
                 
                 allWindows.forEach(win => {
-                    win.style.transition = 'all 0.8s ease-out';
+                    win.style.transition = 'all 0.8s ease-out'; // 初始弹幕消失稍慢
                     
                     setTimeout(() => {
                         let opacity = 1;
                         const fadeInterval = setInterval(() => {
                             if (opacity > 0) {
-                                opacity -= 0.02;
+                                opacity -= 0.02; // 更慢的消失速度
                                 win.style.opacity = opacity;
                                 win.style.transform = `scale(${0.8 + opacity * 0.2})`;
                             } else {
@@ -455,23 +414,23 @@
                 });
             }
             
-            // 初始化函数
+            // 初始化函数（降低初始弹幕生成速度）
             function init() {
                 createDecorElements();
                 toggleMusic();
                 
-                let angleStep = 360 / totalInitialWindows;
+                let angleStep = 360 / totalWindows;
                 let currentAngle = 0;
                 
-                // 创建初始心形弹幕
                 function createNextWindow() {
-                    if (allWindows.length < totalInitialWindows) {
+                    if (allWindows.length < totalWindows) {
                         const randomAngle = currentAngle + (Math.random() * 4 - 2);
                         createTipWindow(randomAngle);
                         currentAngle += angleStep;
-                        setTimeout(createNextWindow, 30);
+                        // 降低初始弹幕生成速度（原15ms→50ms）
+                        setTimeout(createNextWindow, 50);
                     } else {
-                        // 初始弹幕显示一段时间后关闭
+                        // 初始弹幕全部加载后，等待一段时间再关闭
                         setTimeout(closeInitialWindows, 2000);
                     }
                 }
