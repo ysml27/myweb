@@ -15,7 +15,7 @@
         body {
             overflow: hidden;
             height: 100vh;
-            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            background-color: #fff0f3;
             transition: background 1.5s ease;
         }
 
@@ -40,30 +40,37 @@
             transform: translate(-50%, -50%) scale(1.05);
         }
         
-        /* 弹幕样式优化：确保显示优先级 */
+        /* 弹幕样式 */
         .tip-window {
             position: absolute;
-            padding: 12px 15px;
+            padding: 10px 14px;
             border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             font-size: 14px;
             font-weight: bold;
             opacity: 0;
             transform: scale(0.8);
             transition: opacity 0.6s ease, transform 0.6s ease;
-            z-index: 300;
-            display: block !important; /* 强制显示 */
+            z-index: 300; /* 子弹幕在上方 */
+            display: block !important;
         }
 
         .tip-window.show {
-            opacity: 1 !important; /* 避免样式覆盖 */
+            opacity: 1 !important;
             transform: scale(1) !important;
+        }
+        
+        /* 子弹幕消失动画 - 加快消失速度 */
+        .tip-window.fade-out {
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out !important;
+            opacity: 0 !important;
+            transform: scale(0.5) translateY(30px) !important;
         }
         
         .miss-window {
             position: fixed;
-            background-color: #FFE4E1;
-            border-radius: 15px;
+            background-color: rgba(255,228,225,0.9);
+            border-radius: 20px;
             box-shadow: 0 8px 30px rgba(255,105,180,0.35);
             display: flex;
             align-items: center;
@@ -71,7 +78,7 @@
             opacity: 0;
             transform: scale(0.9);
             transition: all 0.8s ease;
-            z-index: 200;
+            z-index: 200; /* 主弹幕在下方 */
             width: 500px;
             height: 250px;
         }
@@ -128,7 +135,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 音乐控制（移除alert避免阻塞）
+            // 音乐控制
             const music = document.getElementById('backgroundMusic');
             const musicControl = document.getElementById('musicControl');
             let isPlaying = false;
@@ -147,31 +154,36 @@
             
             musicControl.addEventListener('click', toggleMusic);
             
-            // 祝福语列表
+            // 祝福语列表（与参考图匹配）
             const tips = [
                 "保持微笑呀", "每天都要元气满满", "好好爱自己", "别熬夜",
-                "今天过得开心嘛", "期待下一次见面", "顺顺利利", "早点休息"
+                "今天过得开心嘛", "期待下一次见面", "顺顺利利", "早点休息",
+                "梦想成真", "我想你了", "所有烦恼都消失", "天冷了，多穿衣服",
+                "对自己好一点~", "保持好心情", "记得吃水果", "要好好生活哦",
+                "金榜题名", "多喝水哦", "今天过得开心嘛", "别熬夜晚睡"
             ];
             
-            // 背景颜色列表
+            // 背景颜色列表（与参考图匹配的柔和色调）
             const bgColors = [
                 "#d5f5e3", "#d6eaf8", "#fce4ec", "#fef5d4",
-                "#e0f7fa", "#f8c4e4", "#ffdab9"
+                "#e0f7fa", "#f8c4e4", "#ffdab9", "#fff3cd",
+                "#ffe4e1", "#f0fff4", "#fff0f3", "#ffead1"
             ];
             
             const allWindows = [];
-            const totalWindows = 100; // 减少数量，避免性能问题
+            const totalWindows = 90; // 初始爱心弹幕数量
             let hasChangedText = false;
+            let bulletWindows = []; // 单独存储子弹幕，便于追踪
             
             // 创建装饰元素
             function createDecorElements() {
-                const count = 10;
+                const count = 15;
                 for (let i = 0; i < count; i++) {
                     const decor = document.createElement('div');
                     decor.className = 'decor';
                     decor.textContent = '❀';
                     decor.style.fontSize = `${Math.random() * 15 + 10}px`;
-                    decor.style.color = '#FF69B4';
+                    decor.style.color = '#FFB6C1';
                     decor.style.left = `${Math.random() * 100}vw`;
                     decor.style.top = `${Math.random() * 100}vh`;
                     document.body.appendChild(decor);
@@ -186,8 +198,8 @@
                 };
             }
             
-            // 调整爱心比例（确保弹幕在屏幕内）
-            const scale = Math.min(window.innerWidth, window.innerHeight) / 35;
+            // 爱心大小比例
+            const scale = Math.min(window.innerWidth, window.innerHeight) / 42;
             
             // 计算爱心曲线上的坐标
             function getHeartCoordinates(angle) {
@@ -201,11 +213,11 @@
                 };
             }
             
-            // 创建弹幕窗口（增加可见性检查）
+            // 创建初始爱心弹幕
             function createTipWindow(angle) {
                 const { x, y } = getHeartCoordinates(angle);
-                const width = Math.floor(Math.random() * 30) + 60;
-                const height = Math.floor(Math.random() * 20) + 40;
+                const width = Math.floor(Math.random() * 30) + 75;
+                const height = Math.floor(Math.random() * 20) + 55;
                 
                 // 确保弹幕在屏幕内
                 if (x < width/2 || x > window.innerWidth - width/2 || 
@@ -225,80 +237,152 @@
                 document.body.appendChild(div);
                 allWindows.push(div);
                 
-                // 立即显示弹幕
+                // 延迟添加出现动画
                 setTimeout(() => {
                     div.classList.add('show');
-                }, 10);
+                }, 50);
             }
             
-            // 从主弹窗内部弹出弹幕（优化动画逻辑）
+            // 从主弹窗发射子弹幕
             function popFromMissWindow(missWindow) {
                 const rect = missWindow.getBoundingClientRect();
                 const centerX = rect.left + rect.width / 2;
                 const centerY = rect.top + rect.height / 2;
-                const popCount = 300; // 减少数量，确保流畅
+                const popCount = 300; // 子弹幕总数
+                let currentBatch = 0;
                 
-                // 分批生成弹幕，避免浏览器卡顿
+                // 清空之前的子弹幕数组
+                bulletWindows = [];
+                
+                // 分批生成弹幕
                 const batchSize = 20;
                 const totalBatches = Math.ceil(popCount / batchSize);
                 
-                for (let batch = 0; batch < totalBatches; batch++) {
-                    setTimeout(() => {
-                        for (let i = 0; i < batchSize; i++) {
-                            const width = Math.floor(Math.random() * 30) + 60;
-                            const height = Math.floor(Math.random() * 20) + 40;
-                            
-                            // 计算扩散轨迹
-                            const angle = Math.random() * Math.PI * 2;
-                            const distance = Math.random() * 400 + 50;
-                            const x = centerX + Math.cos(angle) * distance - width / 2;
-                            const y = centerY + Math.sin(angle) * distance - height / 2;
-                            
-                            const div = document.createElement('div');
-                            div.className = 'tip-window';
-                            div.style.width = `${width}px`;
-                            div.style.height = `${height}px`;
-                            div.style.left = `${x}px`;
-                            div.style.top = `${y}px`;
-                            div.style.backgroundColor = bgColors[Math.floor(Math.random() * bgColors.length)];
-                            div.textContent = tips[Math.floor(Math.random() * tips.length)];
-                            // 从中心弹窗位置开始动画
-                            div.style.transform = `translate(${centerX - x - width/2}px, ${centerY - y - height/2}px) scale(0)`;
-                            
-                            document.body.appendChild(div);
-                            allWindows.push(div);
-                            
-                            // 触发扩散动画
+                function sendBatch() {
+                    if (currentBatch >= totalBatches) {
+                        // 所有子弹幕出现后换字
+                        setTimeout(() => {
+                            changeMissWindowText(missWindow);
+                            // 换字后触发子弹幕消失
                             setTimeout(() => {
-                                div.classList.add('show');
-                                div.style.transform = 'scale(1)';
-                                
-                                // 检测覆盖并切换文字
-                                if (!hasChangedText) {
-                                    const missRect = missWindow.getBoundingClientRect();
-                                    const divRect = div.getBoundingClientRect();
-                                    const isOverlap = !(
-                                        missRect.right < divRect.left ||
-                                        missRect.left > divRect.right ||
-                                        missRect.bottom < divRect.top ||
-                                        missRect.top > divRect.bottom
-                                    );
-                                    if (isOverlap) {
-                                        hasChangedText = true;
-                                        const textElement = missWindow.querySelector('.miss-text');
-                                        textElement.textContent = '我喜欢你';
-                                        textElement.style.color = '#FF69B4';
-                                        textElement.classList.add('pulse');
-                                    }
-                                }
-                            }, 50);
-                        }
-                    }, batch * 150); // 每批间隔150ms，避免阻塞
+                                fadeOutAllBulletWindows();
+                            }, 1000);
+                        }, 1000);
+                        return;
+                    }
+                    
+                    for (let i = 0; i < batchSize; i++) {
+                        // 超出总数量则停止
+                        if (bulletWindows.length >= popCount) break;
+                        
+                        const width = Math.floor(Math.random() * 30) + 60;
+                        const height = Math.floor(Math.random() * 20) + 40;
+                        
+                        // 随机角度和距离（向四周发射）
+                        const angle = Math.random() * Math.PI * 2;
+                        const distance = Math.random() * 400 + 50;
+                        const x = centerX + Math.cos(angle) * distance - width / 2;
+                        const y = centerY + Math.sin(angle) * distance - height / 2;
+                        
+                        const div = document.createElement('div');
+                        div.className = 'tip-window';
+                        div.style.width = `${width}px`;
+                        div.style.height = `${height}px`;
+                        div.style.left = `${x}px`;
+                        div.style.top = `${y}px`;
+                        div.style.backgroundColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+                        div.textContent = tips[Math.floor(Math.random() * tips.length)];
+                        // 从中心弹窗位置开始动画
+                        div.style.transform = `translate(${centerX - x - width/2}px, ${centerY - y - height/2}px) scale(0)`;
+                        
+                        document.body.appendChild(div);
+                        allWindows.push(div);
+                        bulletWindows.push(div); // 单独记录子弹幕
+                        
+                        // 触发扩散动画
+                        setTimeout(() => {
+                            div.classList.add('show');
+                            div.style.transform = 'scale(1)';
+                        }, 50);
+                    }
+                    
+                    currentBatch++;
+                    setTimeout(sendBatch, 150);
                 }
+                
+                // 开始发射弹幕
+                sendBatch();
             }
             
-            // 弹幕消失动画优化
-            function fadeOutAllWindows(callback) {
+            // 主弹窗换字函数
+            function changeMissWindowText(missWindow) {
+                if (hasChangedText) return;
+                hasChangedText = true;
+                
+                const textElement = missWindow.querySelector('.miss-text');
+                textElement.style.opacity = '0';
+                textElement.style.transform = 'scale(0.9)';
+                
+                setTimeout(() => {
+                    textElement.textContent = '该睡觉了傻瓜';
+                    textElement.style.color = '#FF69B4';
+                    textElement.style.opacity = '1';
+                    textElement.style.transform = 'scale(1)';
+                    textElement.classList.add('pulse');
+                }, 400);
+            }
+            
+            // 子弹幕全部消失（核心优化）
+            function fadeOutAllBulletWindows() {
+                const totalBullets = bulletWindows.length;
+                let removedCount = 0;
+                
+                // 为每个子弹幕设置消失动画
+                bulletWindows.forEach((win, index) => {
+                    // 随机延迟，0-2秒内全部开始消失
+                    const delay = Math.random() * 2000;
+                    
+                    setTimeout(() => {
+                        win.classList.add('fade-out');
+                        
+                        // 动画结束后强制移除
+                        setTimeout(() => {
+                            if (win.parentNode) {
+                                win.parentNode.removeChild(win);
+                            }
+                            removedCount++;
+                            
+                            // 检查是否所有子弹幕都已移除
+                            if (removedCount === totalBullets) {
+                                // 最后再强制清理一次，确保没有残留
+                                cleanupRemainingBullets();
+                            }
+                        }, 600); // 与动画时间匹配
+                    }, delay);
+                });
+                
+                // 额外保险：5秒后无论如何都强制清理所有子弹幕
+                setTimeout(cleanupRemainingBullets, 5000);
+            }
+            
+            // 强制清理残留的子弹幕
+            function cleanupRemainingBullets() {
+                // 从DOM中移除所有剩余的子弹幕
+                bulletWindows.forEach(win => {
+                    if (win.parentNode) {
+                        win.parentNode.removeChild(win);
+                    }
+                });
+                // 清空数组
+                bulletWindows = [];
+                // 也清理主数组中的引用
+                const initialWindows = allWindows.slice(0, totalWindows);
+                allWindows.length = 0;
+                allWindows.push(...initialWindows);
+            }
+            
+            // 初始爱心弹幕消失函数
+            function fadeOutInitialWindows(callback) {
                 let completed = 0;
                 const total = allWindows.length;
                 
@@ -324,10 +408,8 @@
                 });
             }
             
-            // 显示中心弹窗
+            // 显示中心主弹幕
             function showMissYouWindow() {
-                document.body.style.background = "linear-gradient(135deg, #fff0f3 0%, #ffe4e1 100%)";
-                
                 const center = getCenterPosition();
                 const div = document.createElement('div');
                 div.className = 'miss-window';
@@ -348,9 +430,18 @@
                     // 弹窗显示后开始扩散弹幕
                     setTimeout(() => popFromMissWindow(div), 500);
                 }, 100);
+                
+                // 点击交互
+                div.addEventListener('click', () => {
+                    const textElement = div.querySelector('.miss-text');
+                    textElement.style.opacity = '0.6';
+                    setTimeout(() => {
+                        textElement.style.opacity = '1';
+                    }, 300);
+                });
             }
             
-            // 关闭初始弹幕
+            // 关闭初始爱心弹幕
             function closeInitialWindows() {
                 let completed = 0;
                 const total = allWindows.length;
@@ -377,16 +468,17 @@
                 let angleStep = 360 / totalWindows;
                 let currentAngle = 0;
                 
-                // 生成初始心形弹幕
                 function createNextWindow() {
                     if (allWindows.length < totalWindows) {
                         const randomAngle = currentAngle + (Math.random() * 4 - 2);
                         createTipWindow(randomAngle);
                         currentAngle += angleStep;
-                        setTimeout(createNextWindow, 30);
+                        // 控制生成速度
+                        const delay = Math.random() * 50 + 100;
+                        setTimeout(createNextWindow, delay);
                     } else {
-                        // 初始弹幕显示3秒后关闭
-                        setTimeout(closeInitialWindows, 3000);
+                        // 全部创建完成后关闭初始弹幕
+                        setTimeout(closeInitialWindows, 5200);
                     }
                 }
                 
